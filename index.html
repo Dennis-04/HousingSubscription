@@ -50,6 +50,15 @@
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            <filter id="hover-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="5" result="blur" />
+              <feFlood flood-color="#11110f" flood-opacity="0.22" />
+              <feComposite in2="blur" operator="in" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
           </defs>
 
           <g id="map-layer" class="map-layer"></g>

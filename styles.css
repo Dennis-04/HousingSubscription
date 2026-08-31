@@ -8,7 +8,8 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --paper: #f7f6f3;
-  --ink: #151514;
+  --ink: #7f7e79;
+  --hover-ink: #11110f;
   --muted: #7b7973;
   --line: rgba(17, 17, 15, 0.1);
   --blue: #2563eb;
@@ -218,6 +219,16 @@ h1 {
     transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.map-layer.has-hover .region:not(.is-hovered) .region-shape {
+  opacity: 0.28;
+  filter: none;
+  transform: scale(0.995);
+}
+
+.map-layer.has-hover .region:not(.is-hovered) .region-outline {
+  opacity: 0.18;
+}
+
 .region-outline {
   fill: transparent;
   stroke: rgba(17, 17, 15, 0.12);
@@ -232,17 +243,17 @@ h1 {
 }
 
 .region.is-hovered {
-  color: var(--blue);
+  color: var(--hover-ink);
 }
 
 .region.is-hovered .region-shape {
-  filter: url(#blue-glow);
-  transform: scale(1.006);
+  filter: url(#hover-glow);
+  transform: scale(1.024);
 }
 
 .region.is-hovered .region-outline {
-  stroke: rgba(37, 99, 235, 0.72);
-  stroke-width: 1.35;
+  stroke: rgba(17, 17, 15, 0.78);
+  stroke-width: 1.45;
 }
 
 .region.is-active {
@@ -259,6 +270,18 @@ h1 {
   stroke-width: 1.5;
 }
 
+.region.is-active.is-hovered {
+  color: var(--hover-ink);
+}
+
+.region.is-active.is-hovered .region-shape {
+  filter: url(#hover-glow);
+}
+
+.region.is-active.is-hovered .region-outline {
+  stroke: var(--hover-ink);
+}
+
 .region:focus-visible .region-outline {
   stroke: var(--blue);
   stroke-width: 2;
@@ -269,10 +292,10 @@ h1 {
 }
 
 .cursor-dot {
-  fill: var(--blue);
+  fill: var(--hover-ink);
   opacity: 0;
   pointer-events: none;
-  filter: url(#blue-glow);
+  filter: url(#hover-glow);
   transform-box: fill-box;
   transform-origin: center;
   transform: scale(0.3);
@@ -294,11 +317,11 @@ h1 {
   top: 0;
   left: 0;
   padding: 8px 11px;
-  border: 1px solid rgba(37, 99, 235, 0.13);
+  border: 1px solid rgba(17, 17, 15, 0.12);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 10px 30px rgba(31, 48, 86, 0.1);
-  color: #184fc3;
+  color: #242320;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: -0.025em;

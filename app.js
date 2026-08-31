@@ -246,11 +246,13 @@ function setGroupHighlight(key, className, enabled) {
 function clearHover() {
   if (hoveredKey) setGroupHighlight(hoveredKey, "is-hovered", false);
   hoveredKey = null;
+  mapLayer.classList.remove("has-hover");
   tooltip.classList.remove("visible");
   cursorDot.classList.remove("visible");
 }
 
 function showHover(meta, event) {
+  mapLayer.classList.add("has-hover");
   if (hoveredKey !== meta.key) {
     if (hoveredKey) setGroupHighlight(hoveredKey, "is-hovered", false);
     hoveredKey = meta.key;
