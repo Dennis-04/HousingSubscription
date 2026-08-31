@@ -47,7 +47,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["python", "-m", "housing_backend.cli", "collect", "--sources", "applyhome,lh"]
+    command:
+      [
+        "python",
+        "-m",
+        "housing_backend.cli",
+        "collect-loop",
+        "--sources",
+        "applyhome,lh",
+        "--interval-seconds",
+        "1800",
+      ]
 
 volumes:
   postgres_data:

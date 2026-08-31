@@ -4,9 +4,11 @@ import argparse
 import asyncio
 import json
 from dataclasses import asdict
+from datetime import date
 from pathlib import Path
 
 from housing_backend.bootstrap import Container
+from housing_backend.infrastructure.http import safe_error
 
 
 def parser() -> argparse.ArgumentParser:
@@ -15,6 +17,14 @@ def parser() -> argparse.ArgumentParser:
 
     collect = commands.add_parser("collect", help="공식 API에서 신규/변경 공고 수집")
     collect.add_argument("--sources", default="applyhome,lh")
+    collect.add_argument("--since", type=date.fromisoformat)
+    collect.add_argument("--until", type=date.fromisoformat)
+
+    loop = commands.add_parser("collect-loop", help="지정 간격으로 공식 API 수집 반복")
+    loop.add_argument("--sources", default="applyhome,lh")
+    loop.add_argument("--since", type=date.fromisoformat)
+    loop.add_argument("--until", type=date.fromisoformat)
+    loop.add_argument("--interval-seconds", type=int, default=1800)
 
     seed = commands.add_parser("seed-regions", help="지도 GeoJSON에서 행정구역 적재")
     seed.add_argument("--geojson", default="../assets/sgg.json")
@@ -25,15 +35,32 @@ async def run(args: argparse.Namespace) -> None:
     container = Container()
     await container.startup()
     try:
-        if args.command == "collect":
+        if args.command in {"collect", "collect-loop"}:
             if not container.settings.has_service_key:
                 raise SystemExit("DATA_GO_KR_SERVICE_KEY가 설정되지 않았습니다.")
             names = [name.strip() for name in args.sources.split(",") if name.strip()]
             unknown = sorted(set(names) - set(container.sources))
             if unknown:
                 raise SystemExit(f"알 수 없는 소스: {', '.join(unknown)}")
-            results = await container.collect_notices.execute(names)
-            print(json.dumps([asdict(result) for result in results], ensure_ascii=False, indent=2))
+            while True:
+                try:
+                    results = await container.collect_notices.execute(
+                        names, since=args.since, until=args.until
+                    )
+                    print(
+                        json.dumps(
+                            [asdict(result) for result in results],
+                            ensure_ascii=False,
+                            indent=2,
+                        )
+                    )
+                except Exception as exc:
+                    print(json.dumps({"status": "failed", "error": safe_error(exc)}))
+                    if args.command == "collect":
+                        raise
+                if args.command == "collect":
+                    break
+                await asyncio.sleep(max(args.interval_seconds, 60))
         elif args.command == "seed-regions":
             records = _region_records(Path(args.geojson))
             created = await container.repository.seed_regions(records)

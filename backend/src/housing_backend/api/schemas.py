@@ -27,6 +27,7 @@ class AnnouncementSummary(BaseModel):
     status: str
     notice_url: str | None
     is_correction: bool
+    is_active: bool
     updated_at: datetime
 
 
@@ -80,6 +81,28 @@ class CompetitionOut(BaseModel):
     competition_rate: Decimal | None
 
 
+class SpecialSupplyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    unit_key: str
+    category: str
+    residence_area: str
+    supply_count: int | None
+    applicant_count: int | None
+    result_status: str | None
+
+
+class WinningScoreOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    unit_key: str
+    residence_code: str
+    residence_name: str
+    lowest_score: Decimal | None
+    highest_score: Decimal | None
+    average_score: Decimal | None
+
+
 class DocumentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -106,6 +129,8 @@ class AnnouncementDetail(AnnouncementSummary):
     versions: list[NoticeVersionOut]
     units: list[HousingUnitOut]
     competitions: list[CompetitionOut]
+    special_supplies: list[SpecialSupplyOut]
+    winning_scores: list[WinningScoreOut]
     documents: list[DocumentOut]
     legal_notice: str = Field(
         default="청약 조건과 일정은 변경될 수 있으므로 최종 판단 전 원문 공고문을 확인하세요."
@@ -120,6 +145,8 @@ class RegionSummary(BaseModel):
 
 class CollectionRequest(BaseModel):
     sources: list[str] = Field(default_factory=lambda: ["applyhome", "lh"])
+    since: date | None = None
+    until: date | None = None
 
 
 class CollectionResultOut(BaseModel):
@@ -128,3 +155,9 @@ class CollectionResultOut(BaseModel):
     created: int
     changed: int
     documents_saved: int
+    housing_units: int
+    competitions: int
+    special_supplies: int
+    winning_scores: int
+    unmatched: int
+    endpoint_errors: int

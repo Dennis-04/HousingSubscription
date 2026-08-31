@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     pdf_max_bytes: int = 50 * 1024 * 1024
 
     collection_lookback_days: int = 30
+    collection_future_days: int = 90
     collection_page_size: int = 100
     collection_http_timeout_seconds: float = 20
     collection_max_retries: int = 3

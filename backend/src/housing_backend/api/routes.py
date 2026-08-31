@@ -43,6 +43,7 @@ async def ready(container: Container = Depends(get_container)) -> dict[str, obje
                 "started_at": run.started_at,
                 "finished_at": run.finished_at,
                 "error": run.error,
+                "endpoint_errors": run.endpoint_errors,
             }
             for run in runs
         ],
@@ -56,6 +57,7 @@ async def announcements(
     provider: str | None = None,
     housing_type: str | None = None,
     q: str | None = None,
+    include_inactive: bool = False,
     page: int = Query(default=1, ge=1),
     size: int = Query(default=20, ge=1, le=100),
     container: Container = Depends(get_container),
@@ -66,6 +68,7 @@ async def announcements(
         provider=provider,
         housing_type=housing_type,
         query=q,
+        include_inactive=include_inactive,
         page=page,
         size=size,
     )
@@ -137,5 +140,12 @@ async def run_collection(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"사용할 수 없는 소스: {', '.join(unavailable)}",
         )
-    results = await container.collect_notices.execute(body.sources)
+    if body.since and body.until and body.since > body.until:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="since는 until보다 늦을 수 없습니다.",
+        )
+    results = await container.collect_notices.execute(
+        body.sources, since=body.since, until=body.until
+    )
     return [CollectionResultOut.model_validate(result, from_attributes=True) for result in results]

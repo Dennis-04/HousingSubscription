@@ -42,6 +42,11 @@ def to_decimal(value: Any) -> Decimal | None:
         return None
 
 
+def stable_hash(value: Any) -> str:
+    payload = json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+
 @dataclass(slots=True)
 class AnnouncementRecord:
     provider: str
@@ -102,6 +107,9 @@ class HousingUnitRecord:
     monthly_rent: int | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
+    def record_key(self) -> str:
+        return "|".join((self.provider, self.source_notice_id, self.unit_key))
+
 
 @dataclass(slots=True)
 class CompetitionRecord:
@@ -116,6 +124,68 @@ class CompetitionRecord:
     applicant_count: int | None = None
     competition_rate: Decimal | None = None
     raw: dict[str, Any] = field(default_factory=dict)
+
+    def record_key(self) -> str:
+        return "|".join(
+            (
+                self.provider,
+                self.source_notice_id,
+                self.unit_key,
+                self.supply_category,
+                self.rank,
+                self.residence_area,
+            )
+        )
+
+
+@dataclass(slots=True)
+class SpecialSupplyRecord:
+    provider: str
+    source_notice_id: str
+    source_house_id: str | None
+    unit_key: str
+    category: str
+    residence_area: str
+    supply_count: int | None = None
+    applicant_count: int | None = None
+    result_status: str | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
+
+    def record_key(self) -> str:
+        return "|".join(
+            (
+                self.provider,
+                self.source_notice_id,
+                self.unit_key,
+                self.category,
+                self.residence_area,
+            )
+        )
+
+
+@dataclass(slots=True)
+class WinningScoreRecord:
+    provider: str
+    source_notice_id: str
+    source_house_id: str | None
+    unit_key: str
+    residence_code: str
+    residence_name: str
+    lowest_score: Decimal | None = None
+    highest_score: Decimal | None = None
+    average_score: Decimal | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
+
+    def record_key(self) -> str:
+        return "|".join(
+            (
+                self.provider,
+                self.source_notice_id,
+                self.unit_key,
+                self.residence_code,
+                self.residence_name,
+            )
+        )
 
 
 @dataclass(slots=True)
@@ -135,4 +205,7 @@ class SourceBatch:
     announcements: list[AnnouncementRecord] = field(default_factory=list)
     housing_units: list[HousingUnitRecord] = field(default_factory=list)
     competitions: list[CompetitionRecord] = field(default_factory=list)
+    special_supplies: list[SpecialSupplyRecord] = field(default_factory=list)
+    winning_scores: list[WinningScoreRecord] = field(default_factory=list)
     documents: list[DocumentCandidate] = field(default_factory=list)
+    endpoint_errors: list[dict[str, str]] = field(default_factory=list)

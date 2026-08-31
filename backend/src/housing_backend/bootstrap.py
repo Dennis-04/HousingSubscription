@@ -47,6 +47,7 @@ class Container:
             ),
             storage=self.storage if self.settings.pdf_download_enabled else None,
             lookback_days=self.settings.collection_lookback_days,
+            future_days=self.settings.collection_future_days,
         )
 
     async def startup(self) -> None:

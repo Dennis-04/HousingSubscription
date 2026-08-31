@@ -68,6 +68,14 @@ class Announcement(Base, TimestampMixin):
     developer: Mapped[str | None] = mapped_column(String(300))
     constructor: Mapped[str | None] = mapped_column(String(300))
     is_correction: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False, index=True
+    )
+    withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    superseded_by_id: Mapped[str | None] = mapped_column(
+        ForeignKey("announcements.id", ondelete="SET NULL"), index=True
+    )
     current_content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     raw: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
@@ -78,6 +86,12 @@ class Announcement(Base, TimestampMixin):
         back_populates="announcement", cascade="all, delete-orphan"
     )
     competitions: Mapped[list[Competition]] = relationship(
+        back_populates="announcement", cascade="all, delete-orphan"
+    )
+    special_supplies: Mapped[list[SpecialSupplyApplication]] = relationship(
+        back_populates="announcement", cascade="all, delete-orphan"
+    )
+    winning_scores: Mapped[list[WinningScore]] = relationship(
         back_populates="announcement", cascade="all, delete-orphan"
     )
     documents: Mapped[list[Document]] = relationship(
@@ -124,6 +138,10 @@ class HousingUnit(Base, TimestampMixin):
     top_price: Mapped[int | None] = mapped_column(Integer)
     deposit: Mapped[int | None] = mapped_column(Integer)
     monthly_rent: Mapped[int | None] = mapped_column(Integer)
+    current_content_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    last_observed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
     raw: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
     announcement: Mapped[Announcement] = relationship(back_populates="units")
@@ -148,9 +166,108 @@ class Competition(Base, TimestampMixin):
     supply_count: Mapped[int | None] = mapped_column(Integer)
     applicant_count: Mapped[int | None] = mapped_column(Integer)
     competition_rate: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    current_content_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    last_observed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
     raw: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
     announcement: Mapped[Announcement] = relationship(back_populates="competitions")
+
+
+class SpecialSupplyApplication(Base, TimestampMixin):
+    __tablename__ = "special_supply_applications"
+    __table_args__ = (
+        UniqueConstraint("announcement_id", "unit_key", "category", "residence_area"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    announcement_id: Mapped[str] = mapped_column(
+        ForeignKey("announcements.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    unit_key: Mapped[str] = mapped_column(String(150), nullable=False)
+    category: Mapped[str] = mapped_column(String(100), nullable=False)
+    residence_area: Mapped[str] = mapped_column(String(100), nullable=False)
+    supply_count: Mapped[int | None] = mapped_column(Integer)
+    applicant_count: Mapped[int | None] = mapped_column(Integer)
+    result_status: Mapped[str | None] = mapped_column(String(120))
+    current_content_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    last_observed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    raw: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+
+    announcement: Mapped[Announcement] = relationship(back_populates="special_supplies")
+
+
+class WinningScore(Base, TimestampMixin):
+    __tablename__ = "winning_scores"
+    __table_args__ = (
+        UniqueConstraint(
+            "announcement_id", "unit_key", "residence_code", "residence_name"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    announcement_id: Mapped[str] = mapped_column(
+        ForeignKey("announcements.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    unit_key: Mapped[str] = mapped_column(String(150), nullable=False)
+    residence_code: Mapped[str] = mapped_column(String(30), nullable=False)
+    residence_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    lowest_score: Mapped[Decimal | None] = mapped_column(Numeric(10, 4))
+    highest_score: Mapped[Decimal | None] = mapped_column(Numeric(10, 4))
+    average_score: Mapped[Decimal | None] = mapped_column(Numeric(10, 4))
+    current_content_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    last_observed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    raw: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+
+    announcement: Mapped[Announcement] = relationship(back_populates="winning_scores")
+
+
+class MetricSnapshot(Base):
+    __tablename__ = "metric_snapshots"
+    __table_args__ = (
+        UniqueConstraint("metric_type", "record_key", "content_hash"),
+        Index("ix_metric_snapshots_announcement_type", "announcement_id", "metric_type"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    announcement_id: Mapped[str] = mapped_column(
+        ForeignKey("announcements.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    metric_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    record_key: Mapped[str] = mapped_column(String(500), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False, index=True
+    )
+
+
+class UnmatchedSourceRecord(Base):
+    __tablename__ = "unmatched_source_records"
+    __table_args__ = (
+        UniqueConstraint("provider", "endpoint", "record_type", "content_hash"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    provider: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    endpoint: Mapped[str] = mapped_column(String(150), nullable=False)
+    record_type: Mapped[str] = mapped_column(String(60), nullable=False)
+    source_house_id: Mapped[str | None] = mapped_column(String(120), index=True)
+    source_notice_id: Mapped[str | None] = mapped_column(String(120), index=True)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    raw: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Document(Base):
@@ -208,14 +325,40 @@ class CollectionRun(Base):
     source: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
     since_date: Mapped[date] = mapped_column(Date, nullable=False)
+    until_date: Mapped[date | None] = mapped_column(Date)
     discovered_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     changed_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     error: Mapped[str | None] = mapped_column(Text)
+    endpoint_errors: Mapped[list[dict[str, str]]] = mapped_column(
+        JSON, default=list, nullable=False
+    )
     started_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, nullable=False, index=True
     )
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class CollectionCheckpoint(Base):
+    __tablename__ = "collection_checkpoints"
+
+    source: Mapped[str] = mapped_column(String(40), primary_key=True)
+    last_successful_since: Mapped[date] = mapped_column(Date, nullable=False)
+    last_successful_until: Mapped[date | None] = mapped_column(Date)
+    last_run_id: Mapped[str | None] = mapped_column(
+        ForeignKey("collection_runs.id", ondelete="SET NULL")
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False
+    )
+
+
+class CollectionLease(Base):
+    __tablename__ = "collection_leases"
+
+    source: Mapped[str] = mapped_column(String(40), primary_key=True)
+    owner: Mapped[str] = mapped_column(String(100), nullable=False)
+    lease_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class WatchRule(Base, TimestampMixin):

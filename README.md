@@ -18,7 +18,7 @@
 │   │   └── api/                    # FastAPI 라우트와 응답 모델
 │   ├── migrations/                 # Alembic DB 마이그레이션
 │   └── tests/
-└── docker-compose.yml              # PostgreSQL + API + 일회성 수집 작업
+└── docker-compose.yml              # PostgreSQL + API + 중복 방지 수집 워커
 ```
 
 상세 설계는 [backend/README.md](backend/README.md)를 참고하세요.
@@ -68,7 +68,7 @@ SQLite는 로컬 개발 기본값입니다. 실제 PostgreSQL 환경은 다음�
 
 ```bash
 docker compose up --build db api
-docker compose --profile jobs run --rm collector
+docker compose --profile jobs up --build collector
 ```
 
 ## 데이터 적재
@@ -87,7 +87,15 @@ cd backend
 python -m housing_backend.cli collect --sources applyhome,lh
 ```
 
-운영에서는 이 CLI를 Cloud Scheduler, Kubernetes CronJob, systemd timer 등 외부 스케줄러에서 10~30분마다 실행하세요. 워커를 API 프로세스 안에 넣지 않아 API 재시작이나 다중 인스턴스에서 중복 스케줄이 생기지 않게 했습니다.
+특정 기간을 백필할 수도 있습니다.
+
+```bash
+python -m housing_backend.cli collect --sources applyhome --since 2024-01-01 --until 2024-12-31
+```
+
+Docker의 `collector`는 30분 주기로 반복 실행합니다. Cloud Scheduler, Kubernetes CronJob,
+systemd timer를 쓰는 환경에서는 일회성 `collect` 명령을 호출하면 됩니다. DB lease와 프로세스
+lock이 같은 소스의 중복 실행을 차단합니다.
 
 ## 프런트엔드 기능
 

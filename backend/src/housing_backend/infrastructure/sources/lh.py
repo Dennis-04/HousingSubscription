@@ -14,7 +14,7 @@ from housing_backend.domain.entities import (
     to_decimal,
     to_int,
 )
-from housing_backend.infrastructure.http import ResilientHttpClient
+from housing_backend.infrastructure.http import ResilientHttpClient, safe_error
 from housing_backend.infrastructure.sources.common import (
     all_urls,
     deep_rows,
@@ -41,7 +41,7 @@ class LhSource:
         self.service_key = service_key
         self.page_size = page_size
 
-    async def collect(self, since: date) -> SourceBatch:
+    async def collect(self, since: date, until: date | None = None) -> SourceBatch:
         batch = SourceBatch(source=self.name)
         page = 1
         while True:
@@ -60,6 +60,8 @@ class LhSource:
             for row in rows:
                 announcement = self._map_announcement(row)
                 if not announcement.source_notice_id:
+                    continue
+                if until and announcement.published_at and announcement.published_at > until:
                     continue
                 batch.announcements.append(announcement)
                 await self._append_detail(batch, announcement, row)
@@ -100,7 +102,9 @@ class LhSource:
                     )
                 )
         except Exception as exc:
-            logger.warning("LH detail skipped for %s: %s", announcement.source_notice_id, exc)
+            message = safe_error(exc)
+            batch.endpoint_errors.append({"endpoint": "getLeaseNoticeDtlInfo1", "error": message})
+            logger.warning("LH detail skipped for %s: %s", announcement.source_notice_id, message)
 
         try:
             supply = await self.http.get_json(
@@ -110,7 +114,9 @@ class LhSource:
             for row in deep_rows(supply):
                 batch.housing_units.append(self._map_unit(announcement, row))
         except Exception as exc:
-            logger.warning("LH supply skipped for %s: %s", announcement.source_notice_id, exc)
+            message = safe_error(exc)
+            batch.endpoint_errors.append({"endpoint": "getLeaseNoticeSplInfo1", "error": message})
+            logger.warning("LH supply skipped for %s: %s", announcement.source_notice_id, message)
 
     @staticmethod
     def _map_announcement(row: dict[str, Any]) -> AnnouncementRecord:
