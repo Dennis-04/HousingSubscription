@@ -1,0 +1,15 @@
+# Local environment files
+.env
+.env.*
+.env.local
+env.local
+
+# Keep example config tracked
+!.env.example
+
+# OS/editor noise
+.DS_Store
+
+# Generated/runtime artifacts
+node_modules/
+dist/

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f6f3" />
+    <meta name="description" content="도·시·구 단위로 탐색하는 주택청약지도" />
+    <title>주택청약지도</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22%232563eb%22/></svg>" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <button class="back-button" id="back-button" type="button" aria-label="이전 지도 단계" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 5 8 12l7 7" />
+          </svg>
+        </button>
+
+        <div class="title-group">
+          <h1>주택청약지도</h1>
+          <nav class="breadcrumb" id="breadcrumb" aria-label="지도 탐색 경로"></nav>
+        </div>
+
+        <span class="level-badge" id="level-badge">시·도</span>
+      </header>
+
+      <section class="map-card" id="map-card" aria-label="대한민국 행정구역 지도">
+        <svg
+          class="korea-map"
+          id="korea-map"
+          viewBox="0 0 1000 1000"
+          role="application"
+          aria-label="도, 시, 구를 클릭해 확대하는 점묘 대한민국 지도"
+        >
+          <defs>
+            <pattern id="dot-pattern" patternUnits="userSpaceOnUse" width="12" height="12">
+              <circle id="pattern-dot" cx="6" cy="6" r="2.8" fill="white" />
+            </pattern>
+            <mask id="dot-mask" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="5000" height="5000">
+              <rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#dot-pattern)" />
+            </mask>
+            <filter id="blue-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="7" result="blur" />
+              <feFlood flood-color="#2563eb" flood-opacity="0.32" />
+              <feComposite in2="blur" operator="in" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <g id="map-layer" class="map-layer"></g>
+          <circle id="cursor-dot" class="cursor-dot" cx="0" cy="0" r="5" aria-hidden="true" />
+        </svg>
+
+        <div class="map-tooltip" id="map-tooltip" role="status"></div>
+        <p class="sr-only" id="map-status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script src="./assets/sgg-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
