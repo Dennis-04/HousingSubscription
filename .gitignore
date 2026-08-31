@@ -13,3 +13,15 @@ env.local
 # Generated/runtime artifacts
 node_modules/
 dist/
+
+# Python/backend
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+backend/data/
+backend/.coverage
+
+# Local object storage
+storage/

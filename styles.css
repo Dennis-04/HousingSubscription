@@ -1,8 +1,7 @@
 :root {
   color-scheme: light;
   font-family:
-    Pretendard, "SUIT", "Noto Sans KR", "Apple SD Gothic Neo", system-ui,
-    -apple-system, BlinkMacSystemFont, sans-serif;
+    Helvetica, "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
   background: #f7f6f3;
   color: #11110f;
   font-synthesis: none;
@@ -13,6 +12,14 @@
   --muted: #7b7973;
   --line: rgba(17, 17, 15, 0.1);
   --blue: #2563eb;
+  --golden-ratio: 1.618;
+  --layout-main: 754px;
+  --layout-wide: 1220px;
+  --space-1: 8px;
+  --space-2: 12.944px;
+  --space-3: 20.944px;
+  --space-4: 33.888px;
+  --space-5: 54.832px;
 }
 
 * {
@@ -40,22 +47,22 @@ button {
 }
 
 .app-shell {
-  width: min(100%, 900px);
+  width: min(100%, var(--layout-wide));
   min-height: 100vh;
   min-height: 100svh;
   margin: 0 auto;
-  padding: clamp(34px, 5.5vh, 66px) 24px 36px;
+  padding: clamp(var(--space-4), 5.5vh, var(--space-5)) var(--space-3) var(--space-4);
 }
 
 .app-header {
   position: relative;
   z-index: 4;
-  width: min(100%, 760px);
-  min-height: 58px;
+  width: min(100%, var(--layout-main));
+  min-height: var(--space-5);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 42px 1fr auto;
-  gap: 12px;
+  grid-template-columns: 40px 1fr 47px;
+  gap: var(--space-2);
   align-items: start;
 }
 
@@ -108,20 +115,20 @@ button {
 
 h1 {
   margin: 0;
-  font-size: clamp(25px, 3.2vw, 34px);
-  font-weight: 390;
-  line-height: 1.28;
-  letter-spacing: -0.055em;
+  font-size: clamp(25.888px, 3vw, var(--space-4));
+  font-weight: 400;
+  line-height: 1.236;
+  letter-spacing: -0.045em;
 }
 
 .breadcrumb {
-  min-height: 24px;
-  margin-top: 8px;
+  min-height: var(--space-3);
+  margin-top: var(--space-1);
   display: flex;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 3.056px;
   color: var(--muted);
   font-size: 12px;
 }
@@ -172,9 +179,10 @@ h1 {
 
 .map-card {
   position: relative;
-  width: min(100%, 780px);
-  margin: clamp(20px, 3vh, 34px) auto 0;
+  width: min(100%, var(--layout-main));
+  margin: clamp(var(--space-2), 3vh, var(--space-3)) auto 0;
   isolation: isolate;
+  contain: layout paint style;
 }
 
 .korea-map {
@@ -189,6 +197,7 @@ h1 {
 .map-layer {
   opacity: 1;
   transition: opacity 240ms ease;
+  will-change: opacity;
 }
 
 .map-layer.is-changing {
@@ -225,23 +234,6 @@ h1 {
   transform: scale(0.995);
 }
 
-.map-layer.has-hover .region:not(.is-hovered) .region-outline {
-  opacity: 0.18;
-}
-
-.region-outline {
-  fill: transparent;
-  stroke: rgba(17, 17, 15, 0.12);
-  stroke-width: 0.7;
-  vector-effect: non-scaling-stroke;
-  pointer-events: none;
-  transition: stroke 300ms ease, stroke-width 300ms ease;
-}
-
-.map-layer[data-level="province"] .region-outline {
-  stroke: transparent;
-}
-
 .region.is-hovered {
   color: var(--hover-ink);
 }
@@ -249,11 +241,7 @@ h1 {
 .region.is-hovered .region-shape {
   filter: url(#hover-glow);
   transform: scale(1.024);
-}
-
-.region.is-hovered .region-outline {
-  stroke: rgba(17, 17, 15, 0.78);
-  stroke-width: 1.45;
+  will-change: transform, filter;
 }
 
 .region.is-active {
@@ -263,11 +251,7 @@ h1 {
 .region.is-active .region-shape {
   filter: url(#blue-glow);
   animation: activate-region 580ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.region.is-active .region-outline {
-  stroke: var(--blue);
-  stroke-width: 1.5;
+  will-change: transform, filter;
 }
 
 .region.is-active.is-hovered {
@@ -278,13 +262,8 @@ h1 {
   filter: url(#hover-glow);
 }
 
-.region.is-active.is-hovered .region-outline {
-  stroke: var(--hover-ink);
-}
-
-.region:focus-visible .region-outline {
-  stroke: var(--blue);
-  stroke-width: 2;
+.region:focus-visible {
+  color: var(--blue);
 }
 
 .map-layer.is-entering .region {
@@ -364,12 +343,12 @@ h1 {
 
 @media (max-width: 560px) {
   .app-shell {
-    padding: 25px 12px 24px;
+    padding: var(--space-3) var(--space-2) var(--space-3);
   }
 
   .app-header {
     grid-template-columns: 38px 1fr 43px;
-    gap: 5px;
+    gap: var(--space-1);
   }
 
   .back-button {
@@ -378,11 +357,11 @@ h1 {
   }
 
   h1 {
-    font-size: 24px;
+    font-size: var(--space-3);
   }
 
   .breadcrumb {
-    margin-top: 5px;
+    margin-top: var(--space-1);
     font-size: 11px;
   }
 
@@ -393,7 +372,7 @@ h1 {
   }
 
   .map-card {
-    margin-top: 10px;
+    margin-top: var(--space-2);
   }
 
   .map-tooltip {

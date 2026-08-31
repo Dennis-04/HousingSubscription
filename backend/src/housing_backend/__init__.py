@@ -1,0 +1,1 @@
+"""Housing subscription backend."""

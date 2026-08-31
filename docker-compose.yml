@@ -1,0 +1,53 @@
+name: housing-subscription
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: housing_subscription
+      POSTGRES_USER: housing
+      POSTGRES_PASSWORD: housing_local_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U housing -d housing_subscription"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    env_file:
+      - .env.local
+    environment:
+      DATABASE_URL: postgresql+asyncpg://housing:housing_local_only@db:5432/housing_subscription
+      DB_AUTO_CREATE: "false"
+      DOCUMENT_STORAGE_PATH: /app/data/documents
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data/documents:/app/data/documents
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-c", "alembic upgrade head && uvicorn housing_backend.main:app --host 0.0.0.0 --port 8000"]
+
+  collector:
+    build: ./backend
+    profiles: ["jobs"]
+    env_file:
+      - .env.local
+    environment:
+      DATABASE_URL: postgresql+asyncpg://housing:housing_local_only@db:5432/housing_subscription
+      DOCUMENT_STORAGE_PATH: /app/data/documents
+    volumes:
+      - ./backend/data/documents:/app/data/documents
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "-m", "housing_backend.cli", "collect", "--sources", "applyhome,lh"]
+
+volumes:
+  postgres_data:
